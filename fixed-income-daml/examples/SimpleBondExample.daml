@@ -1,0 +1,5 @@
+module Examples.SimpleBondExample where
+
+import Templates.TermBond
+
+-- Example instantiation placeholder

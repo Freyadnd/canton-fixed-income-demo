@@ -1,0 +1,14 @@
+module Templates.IssuerRegistry where
+
+template IssuerRegistry
+  with
+    operator : Party
+    approvedIssuers : [Party]
+  where
+    signatory operator
+
+    choice AddIssuer : ContractId IssuerRegistry
+      with newIssuer : Party
+      controller operator
+      do
+        create this with approvedIssuers = newIssuer :: approvedIssuers

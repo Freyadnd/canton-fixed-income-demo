@@ -1,0 +1,30 @@
+module Templates.TermBond where
+
+import DA.Time
+
+template TermBond
+  with
+    issuer : Party
+    investor : Party
+    principal : Decimal
+    rate : Decimal
+    issueDate : Time
+    maturity : Time
+  where
+    signatory issuer
+    observer investor
+
+    choice GetNAV : Decimal
+      controller investor
+      do
+        now <- getTime
+        assertMsg "Bond not active yet" (now >= issueDate)
+        let nav = principal * (1.0 + rate)
+        return nav
+
+    choice Redeem : ()
+      controller investor
+      do
+        now <- getTime
+        assertMsg "Not matured yet" (now >= maturity)
+        archive self

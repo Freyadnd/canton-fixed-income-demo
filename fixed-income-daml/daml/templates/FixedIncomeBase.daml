@@ -1,0 +1,22 @@
+module Templates.FixedIncomeBase where
+
+template FixedIncomeBase
+  with
+    issuer : Party
+    investor : Party
+    principal : Decimal
+    rate : Decimal
+  where
+    signatory issuer
+    observer investor
+
+    choice GetNAV : Decimal
+      controller investor
+      do
+        let nav = principal * (1.0 + rate)
+        return nav
+
+    choice Redeem : ()
+      controller investor
+      do
+        archive self

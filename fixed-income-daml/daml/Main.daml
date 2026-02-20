@@ -1,0 +1,24 @@
+module Main where
+
+template FixedIncomeInstrument
+  with
+    issuer : Party
+    investor : Party
+    principal : Decimal
+    rate : Decimal      -- 例如 0.05 表示 5%
+  where
+    signatory issuer
+    observer investor
+
+    -- 简化版 NAV（固定收益）
+    choice GetNAV : Decimal
+      controller investor
+      do
+        let nav = principal * (1.0 + rate)
+        return nav
+
+    -- 赎回
+    choice Redeem : ()
+      controller investor
+      do
+        archive self

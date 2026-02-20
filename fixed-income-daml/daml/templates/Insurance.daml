@@ -1,0 +1,18 @@
+module Templates.Insurance where
+
+template Insurance
+  with
+    provider : Party
+    insured : Party
+    coverageAmount : Decimal
+    triggered : Bool
+  where
+    signatory provider
+    observer insured
+
+    choice Trigger : ()
+      controller insured
+      do
+        assertMsg "Already triggered" (not triggered)
+        create this with triggered = True
+        archive self
