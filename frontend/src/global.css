@@ -1,0 +1,14 @@
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #F1F5F9;
+  color: #0F172A;
+}
+
+h1, h2, h3 {
+  font-weight: 600;
+}
+
+button {
+  font-weight: 500;
+}

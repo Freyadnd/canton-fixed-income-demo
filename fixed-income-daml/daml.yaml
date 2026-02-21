@@ -6,6 +6,9 @@ name: fixed-income-daml
 source: daml
 version: 0.0.1
 init-script: Main:setup
+sandbox-options:
+  - --json-api-port=7575
+  - --ledger-api-port=6865
 dependencies:
   - daml-prim
   - daml-stdlib
