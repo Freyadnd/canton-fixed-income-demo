@@ -1,24 +1,37 @@
 module Main where
 
-template FixedIncomeInstrument
-  with
-    issuer : Party
-    investor : Party
-    principal : Decimal
-    rate : Decimal      -- 例如 0.05 表示 5%
-  where
-    signatory issuer
-    observer investor
+import Daml.Script
+import DA.Date
+import FixedIncome
 
-    -- 简化版 NAV（固定收益）
-    choice GetNAV : Decimal
-      controller investor
-      do
-        let nav = principal * (1.0 + rate)
-        return nav
+setup : Script ()
+setup = script do
+  issuer <- allocateParty "Issuer"
+  alice <- allocateParty "Alice"
+  insurer <- allocateParty "Insurer"
 
-    -- 赎回
-    choice Redeem : ()
-      controller investor
-      do
-        archive self
+  productCid <- submit issuer do
+    createCmd FixedIncomeProduct
+      with
+        issuer = issuer
+        insurer = insurer
+        productInfo = ProductInfo
+          with
+            name = "3M Note"
+            faceValue = 100.0
+            couponRate = 0.05
+            maturityDate = fromGregorian (2026, Feb, 21)
+        currentNav = 1.0
+        totalUnits = 1000.0
+
+  offerCid <- submit issuer do
+    exerciseCmd productCid OfferToUser
+      with
+        buyer = alice
+        units = 10.0
+        pricePerUnit = 100.0
+
+  holdingCid <- submit alice do
+    exerciseCmd offerCid AcceptPurchase
+
+  debug holdingCid

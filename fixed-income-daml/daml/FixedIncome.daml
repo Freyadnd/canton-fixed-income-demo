@@ -1,0 +1,205 @@
+module FixedIncome where
+
+import DA.Date
+import DA.Assert
+
+-- ==============================
+-- Product Metadata
+-- ==============================
+
+data ProductInfo = ProductInfo with
+    name : Text
+    faceValue : Decimal
+    couponRate : Decimal
+    maturityDate : Date
+  deriving (Eq, Show)
+
+-- ==============================
+-- 1. Product Template
+-- ==============================
+
+template FixedIncomeProduct
+  with
+    issuer : Party
+    insurer : Party
+    productInfo : ProductInfo
+    currentNav : Decimal
+    totalUnits : Decimal
+  where
+    signatory issuer
+    observer insurer
+
+    ensure currentNav > 0.0
+
+    -- NAV Update (safe archive + recreate)
+    choice UpdateNav : ContractId FixedIncomeProduct
+      with newNav : Decimal
+      controller issuer
+      do
+        assert (newNav > 0.0)
+        archive self
+        create this with currentNav = newNav
+
+    -- Offer units to buyer
+    nonconsuming choice OfferToUser : ContractId PurchaseOffer
+      with
+        buyer : Party
+        units : Decimal
+        pricePerUnit : Decimal
+      controller issuer
+      do
+        assert (units > 0.0)
+        create PurchaseOffer with
+          issuer
+          insurer
+          buyer
+          productInfo
+          units
+          pricePerUnit
+
+-- ==============================
+-- 2. Purchase Offer
+-- ==============================
+
+template PurchaseOffer
+  with
+    issuer : Party
+    insurer : Party
+    buyer : Party
+    productInfo : ProductInfo
+    units : Decimal
+    pricePerUnit : Decimal
+  where
+    signatory issuer
+    observer buyer, insurer
+
+    ensure units > 0.0
+
+    choice AcceptPurchase : ContractId Holding
+      controller buyer
+      do
+        create Holding with
+          issuer
+          insurer
+          holder = buyer
+          productInfo
+          units
+
+    choice WithdrawOffer : ()
+      controller issuer
+      do archive self
+
+-- ==============================
+-- 3. Holding
+-- ==============================
+
+template Holding
+  with
+    issuer : Party
+    insurer : Party
+    holder : Party
+    productInfo : ProductInfo
+    units : Decimal
+  where
+    signatory issuer, holder
+    observer insurer
+
+    ensure units > 0.0
+
+    -- Redemption (safe archive)
+    choice Redeem : ContractId RedemptionReceipt
+      controller holder
+      do
+        archive self
+        create RedemptionReceipt with
+          issuer
+          holder
+          productInfo
+          units
+          redemptionAmount = units * productInfo.faceValue
+
+    -- Secondary offer to insurer
+    choice ProposeOfferToInsurer : ContractId InsurerOffer
+      with askPrice : Decimal
+      controller holder
+      do
+        archive self
+        create InsurerOffer with
+          issuer
+          insurer
+          seller = holder
+          productInfo
+          units
+          askPrice
+
+-- ==============================
+-- 4. Insurer Secondary Offer
+-- ==============================
+
+template InsurerOffer
+  with
+    issuer : Party
+    insurer : Party
+    seller : Party
+    productInfo : ProductInfo
+    units : Decimal
+    askPrice : Decimal
+  where
+    signatory issuer, seller
+    observer insurer
+
+    ensure units > 0.0
+
+    -- Insurer accepts (transfer holding)
+    choice AcceptOffer : ContractId Holding
+      controller insurer
+      do
+        archive self
+        create Holding with
+          issuer
+          insurer
+          holder = insurer
+          productInfo
+          units
+
+    -- Insurer rejects (return to seller)
+    choice RejectOffer : ContractId Holding
+      controller insurer
+      do
+        archive self
+        create Holding with
+          issuer
+          insurer
+          holder = seller
+          productInfo
+          units
+
+    -- Seller cancels
+    choice CancelOffer : ContractId Holding
+      controller seller
+      do
+        archive self
+        create Holding with
+          issuer
+          insurer
+          holder = seller
+          productInfo
+          units
+
+-- ==============================
+-- 5. Redemption Receipt
+-- ==============================
+
+template RedemptionReceipt
+  with
+    issuer : Party
+    holder : Party
+    productInfo : ProductInfo
+    units : Decimal
+    redemptionAmount : Decimal
+  where
+    signatory issuer, holder
+
+    choice SettleRedemption : ()
+      controller issuer
+      do archive self
