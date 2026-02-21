@@ -139,7 +139,7 @@ Full on-chain interaction is demonstrated in video via:
 * JSON API calls
 * Live contract creation
 
-Demo video: [link]
+Demo video: [https://drive.google.com/file/d/1BI_FvoY37zGy01m7gbkmQj40gTwMSqZy/view?usp=sharing]
 Frontend demo: [https://frontend-demo-phi-blue.vercel.app/]
 
 ---
