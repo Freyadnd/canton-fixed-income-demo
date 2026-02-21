@@ -8,3 +8,7 @@ import * as TermBond from './TermBond';
 export { TermBond } ;
 import * as Tranche from './Tranche';
 export { Tranche } ;
+
+  export function Holding(Holding: any) {
+    throw new Error("Function not implemented.");
+  }
